@@ -347,7 +347,6 @@ class SearxngCrawlBackend(Backend):
             display_urls=True,
             session=session,
         )
-        logger.info(ret)
         return ret
         # return process_search_results(results, query)
 
