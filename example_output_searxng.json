@@ -1,0 +1,560 @@
+[
+    {
+        "template": "default.html",
+        "url": "https://www.reuters.com/technology/artificial-intelligence/",
+        "title": "Reuters AI News | Latest Headlines and Developments | Reuters",
+        "content": "4 days ago · Explore the latest artificial intelligence news with Reuters - from AI breakthroughs and technology trends to regulation, ethics, business and global …",
+        "publishedDate": null,
+        "thumbnail": "https://imgs.search.brave.com/TVqgSzvfY1psutAv8_d8sQmOzNOaVI7F5J6AhIuJo5Y/rs:fit:200:200:1:0/g:ce/aHR0cHM6Ly93d3cu/cmV1dGVycy5jb20v/cGYvcmVzb3VyY2Vz/L2ltYWdlcy9yZXV0/ZXJzL3JldXRlcnMt/ZGVmYXVsdC53ZWJw/P2Q9MzU0",
+        "engine": "brave",
+        "parsed_url": [
+            "https",
+            "www.reuters.com",
+            "/technology/artificial-intelligence/",
+            "",
+            "",
+            ""
+        ],
+        "img_src": "",
+        "priority": "",
+        "engines": [
+            "brave",
+            "startpage",
+            "bing"
+        ],
+        "positions": [
+            2,
+            2,
+            4
+        ],
+        "score": 3.75,
+        "category": "general"
+    },
+    {
+        "template": "default.html",
+        "url": "https://www.wired.com/tag/artificial-intelligence/",
+        "title": "Artificial Intelligence | Latest News, Photos & Videos | WIRED",
+        "content": "artificial intelligence · '100 Video Calls Per Day': Models Are Applying to Be the Face of AI Scams · Google's AI Search Results Love to Refer You Back to Google.",
+        "publishedDate": null,
+        "thumbnail": "https://imgs.search.brave.com/FopMM8oEsls9lDiRbFccEGBKvP6fmA4m5IfJ3UAM45k/rs:fit:200:200:1:0/g:ce/aHR0cHM6Ly9tZWRp/YS53aXJlZC5jb20v/cGhvdG9zLzY5OWY1/ZDM0YTdjYjE4MzNj/MjQzMTYxNy8xOTE6/MTAwL3dfMTI4MCxj/X2xpbWl0L01vZGVs/cy1BcHBseWluZy10/by1CZS1GYWNlLW9m/LUFJLVNjYW1zLVNl/Y3VyaXR5LTExNTky/MTg5MC5qcGc",
+        "engine": "brave",
+        "parsed_url": [
+            "https",
+            "www.wired.com",
+            "/tag/artificial-intelligence/",
+            "",
+            "",
+            ""
+        ],
+        "img_src": "",
+        "priority": "",
+        "engines": [
+            "brave",
+            "startpage"
+        ],
+        "positions": [
+            8,
+            10
+        ],
+        "score": 0.45,
+        "category": "general"
+    },
+    {
+        "template": "default.html",
+        "url": "https://www.foxnews.com/media/ai-out-control-how-single-article-sending-shock-waves-apocalyptic-warning",
+        "title": "AI expert warns artificial intelligence may eliminate jobs now | Fox News",
+        "content": "The artificial intelligence debate intensifies as tech workers report AI completing their jobs, while some experts predict 50% of entry-level white-collar positions could disappear soon. Published 1 month ago",
+        "publishedDate": null,
+        "thumbnail": "https://imgs.search.brave.com/RrRrvavxd6W7EclhPE7h1VbOYnWCr1t6x65YYGYShzQ/rs:fit:200:200:1:0/g:ce/aHR0cHM6Ly9hNTcu/Zm94bmV3cy5jb20v/c3RhdGljLmZveG5l/d3MuY29tL2ZveG5l/d3MuY29tL2NvbnRl/bnQvdXBsb2Fkcy8y/MDI2LzAyLzEyODAv/NzIwL3NhbS1hbHRt/YW4tYW5kLWNoYXQt/Z3B0LmpwZz92ZT0x/JnRsPTE",
+        "engine": "brave",
+        "parsed_url": [
+            "https",
+            "www.foxnews.com",
+            "/media/ai-out-control-how-single-article-sending-shock-waves-apocalyptic-warning",
+            "",
+            "",
+            ""
+        ],
+        "img_src": "",
+        "priority": "",
+        "engines": [
+            "brave"
+        ],
+        "positions": [
+            5
+        ],
+        "score": 0.2,
+        "category": "general"
+    },
+    {
+        "template": "default.html",
+        "url": "https://www.nytimes.com/2026/02/21/technology/ai-boom-backlash.html",
+        "title": "People Loved the Dot-Com Boom. The A.I. Boom, Not So Much. - The New York Times",
+        "content": "Tech leaders are beginning to worry about the public’s underwhelming enthusiasm for their plans to remake the world with artificial intelligence. Will that burst the bubble? ... Sam Altman, the chief executive of OpenAI, recently said artificial intelligence was spreading more slowly than he had expected.Credit...Associated Press ... David Streitfeld has covered Silicon Valley since the late 1990s. Published Feb. 21, 2026Updated Feb. 23, 2026 · Silicon Valley executives promise that artificial intelligence is going to radically change everyone’s life for the better, starting just a few minutes from now. A.I. is described as the new electricity. It’s even bigger than fire. Don’t bother saving money for retirement because everyone will be rich rich rich. Your grandparents heard pretty much the same thing. The creators of a new technology have always sold it as producing a fundamental transformation of human existence.",
+        "publishedDate": null,
+        "thumbnail": "https://imgs.search.brave.com/hoxYUsdQsRb2GnDHM4A5zukyH5NDzfFvwqCpVr33Kig/rs:fit:200:200:1:0/g:ce/aHR0cHM6Ly9zdGF0/aWMwMS5ueXQuY29t/L2ltYWdlcy8yMDI2/LzAyLzIyL211bHRp/bWVkaWEvMjFiaXot/YWktYmFja2xhc2gt/YWx0bWFuLWNrdmwv/MjFiaXotYWktYmFj/a2xhc2gtYWx0bWFu/LWNrdmwtdmlkZW9T/aXh0ZWVuQnlOaW5l/SnVtYm8xNjAwLmpw/Zw",
+        "engine": "brave",
+        "parsed_url": [
+            "https",
+            "www.nytimes.com",
+            "/2026/02/21/technology/ai-boom-backlash.html",
+            "",
+            "",
+            ""
+        ],
+        "img_src": "",
+        "priority": "",
+        "engines": [
+            "brave"
+        ],
+        "positions": [
+            6
+        ],
+        "score": 0.16666666666666666,
+        "category": "general"
+    },
+    {
+        "template": "default.html",
+        "url": "https://www.bloomberg.com/ai",
+        "title": "AI - Bloomberg",
+        "content": "... AI demand is triggering a historic memory-chip shortage. Meeting exponential demand for chips will be expensive and maybe even impossible. ... The high-stakes conflict between the Defense Department and a $380 billion tech powerhouse goes ...",
+        "publishedDate": null,
+        "thumbnail": "https://imgs.search.brave.com/m7Jfen96xPtekEXCptzbwN1D52cE6auJKE9sP5DajpU/rs:fit:200:200:1:0/g:ce/aHR0cHM6Ly93d3cu/Ymxvb21iZXJnLmNv/bS9haQ",
+        "engine": "brave",
+        "parsed_url": [
+            "https",
+            "www.bloomberg.com",
+            "/ai",
+            "",
+            "",
+            ""
+        ],
+        "img_src": "",
+        "priority": "",
+        "engines": [
+            "brave"
+        ],
+        "positions": [
+            10
+        ],
+        "score": 0.1,
+        "category": "general"
+    },
+    {
+        "template": "default.html",
+        "url": "https://www.crescendo.ai/news/latest-ai-news-and-updates",
+        "title": "Latest AI News and AI Breakthroughs that Matter Most: 2026 | News",
+        "content": "Date: December 14, 2025 Summary: OpenAI has announced the OpenAI Academy for News Organizations, a new initiative designed to provide journalists and media outlets with the tools and training necessary to integrate AI into their workflows. The program offers financial grants, technical support, and access to OpenAI\"s latest models to help newsrooms automate administrative tasks and enhance investigative research.",
+        "publishedDate": null,
+        "thumbnail": "https://imgs.search.brave.com/8WvNkp9R6IKSnaYZ9W-eIRzYw18CJdVbq23T4-Mystc/rs:fit:200:200:1:0/g:ce/aHR0cHM6Ly9jZG4u/cHJvZC53ZWJzaXRl/LWZpbGVzLmNvbS82/NzE2NmJmNzc5YmE4/ODUyMjYwZjdkMWYv/Njk0YTczMWE3NmM5/ZDY4NzZkZGY4YThm/X2xhdGVzdC1haS1u/ZXdzLWFuZC11cGRh/dGVzLnBuZw",
+        "engine": "brave",
+        "parsed_url": [
+            "https",
+            "www.crescendo.ai",
+            "/news/latest-ai-news-and-updates",
+            "",
+            "",
+            ""
+        ],
+        "img_src": "",
+        "priority": "",
+        "engines": [
+            "brave"
+        ],
+        "positions": [
+            12
+        ],
+        "score": 0.08333333333333333,
+        "category": "general"
+    },
+    {
+        "template": "default.html",
+        "url": "https://apnews.com/hub/artificial-intelligence",
+        "title": "Artificial intelligence | AP News",
+        "content": "Google Maps will depend more heavily on artificial intelligence to help people figure out where they want to go and the best way to get there as part of a major redesign unveiled Thursday.",
+        "publishedDate": null,
+        "thumbnail": "https://imgs.search.brave.com/DcSwPfBACyVRqs8hgX3t0Bp6RRI6Q0lO7ugF3XXnI7o/rs:fit:200:200:1:0/g:ce/aHR0cHM6Ly9kaW1z/LmFwbmV3cy5jb20v/ZGltczQvZGVmYXVs/dC8zYTFjYjUyLzIx/NDc0ODM2NDcvc3Ry/aXAvZmFsc2UvY3Jv/cC83MDB4NDUwKzAr/MC9yZXNpemUvNzAw/eDQ1MCEvcXVhbGl0/eS85MC8_dXJsPWh0/dHBzJTNBJTJGJTJG/YXNzZXRzLmFwbmV3/cy5jb20lMkY5MCUy/RjI5JTJGNGUzYzFj/Yzc0NDYwODlhOTEw/MWE3YmRmZjRjOCUy/RmRlZmF1bHRzaGFy/ZWltYWdlLWNvcHku/cG5n",
+        "engine": "brave",
+        "parsed_url": [
+            "https",
+            "apnews.com",
+            "/hub/artificial-intelligence",
+            "",
+            "",
+            ""
+        ],
+        "img_src": "",
+        "priority": "",
+        "engines": [
+            "brave"
+        ],
+        "positions": [
+            13
+        ],
+        "score": 0.07692307692307693,
+        "category": "general"
+    },
+    {
+        "template": "default.html",
+        "url": "https://openai.com/news/",
+        "title": "OpenAI News | OpenAI",
+        "content": "Stay up to speed on the rapid advancement of AI technology and the benefits it offers to humanity.",
+        "publishedDate": null,
+        "thumbnail": "https://imgs.search.brave.com/HKg7nFWhToyKIWuRxCIgvkTwSEtUCwOLRK43CKpk7m8/rs:fit:200:200:1:0/g:ce/aHR0cHM6Ly9pbWFn/ZXMuY3RmYXNzZXRz/Lm5ldC9rZnR6d2R5/YXV3dDkvM0tHT0hr/U1h1NTNuYU11U0ZO/YWl3di9hYTJmOTE0/OTQzYzgzOWNlNmI3/NWI4NjIwYTQ2YjM0/MC9TRU9fQmFubmVy/XzI1NjB4MTQ0MF8w/Mi5wbmc_dz0xNjAw/JmFtcDtoPTkwMCZh/bXA7Zml0PWZpbGw",
+        "engine": "brave",
+        "parsed_url": [
+            "https",
+            "openai.com",
+            "/news/",
+            "",
+            "",
+            ""
+        ],
+        "img_src": "",
+        "priority": "",
+        "engines": [
+            "brave"
+        ],
+        "positions": [
+            14
+        ],
+        "score": 0.07142857142857142,
+        "category": "general"
+    },
+    {
+        "template": "default.html",
+        "url": "https://www.scmp.com/topics/artificial-intelligence",
+        "title": "Artificial intelligence: Latest News and Updates | South China Morning Post",
+        "content": "News articles, analyses and commentary about machines that mimic human cognitive functions such as learning and problem solving. This also covers chatbots, algorithms, consumer products and Big Data analysis that make use of AI.SHOW FULL PROFILE",
+        "publishedDate": null,
+        "thumbnail": "https://imgs.search.brave.com/rkmFcyOm6YtT3oxyZaddl2h0Enrh1N_2A0bnILPMI68/rs:fit:200:200:1:0/g:ce/aHR0cHM6Ly9hc3Nl/dHMtdjIuaS1zY21w/LmNvbS9wcm9kdWN0/aW9uL19uZXh0L3N0/YXRpYy9tZWRpYS9k/ZWZhdWx0LWltYWdl/LmQxYmU4OTY3LnBu/Zw",
+        "engine": "brave",
+        "parsed_url": [
+            "https",
+            "www.scmp.com",
+            "/topics/artificial-intelligence",
+            "",
+            "",
+            ""
+        ],
+        "img_src": "",
+        "priority": "",
+        "engines": [
+            "brave"
+        ],
+        "positions": [
+            16
+        ],
+        "score": 0.0625,
+        "category": "general"
+    },
+    {
+        "template": "default.html",
+        "url": "https://techcrunch.com/category/artificial-intelligence/",
+        "title": "AI News & Artificial Intelligence | TechCrunch",
+        "content": "Read the latest on artificial intelligence and machine learning tech, the companies that are building them, and the ethical issues AI raises today.",
+        "publishedDate": null,
+        "thumbnail": "",
+        "engine": "brave",
+        "parsed_url": [
+            "https",
+            "techcrunch.com",
+            "/category/artificial-intelligence/",
+            "",
+            "",
+            ""
+        ],
+        "img_src": "",
+        "priority": "",
+        "engines": [
+            "brave",
+            "startpage",
+            "bing"
+        ],
+        "positions": [
+            4,
+            5,
+            2
+        ],
+        "score": 2.85,
+        "category": "general"
+    },
+    {
+        "template": "default.html",
+        "url": "https://www.artificialintelligence-news.com/",
+        "title": "AI News | Latest News | Insights Powering AI-Driven Business Growth",
+        "content": "23 hours ago · AI News delivers the latest updates in artificial intelligence, machine learning, deep learning, enterprise AI, and emerging tech worldwide.",
+        "publishedDate": null,
+        "thumbnail": "",
+        "engine": "brave",
+        "parsed_url": [
+            "https",
+            "www.artificialintelligence-news.com",
+            "/",
+            "",
+            "",
+            ""
+        ],
+        "img_src": "",
+        "priority": "",
+        "engines": [
+            "brave",
+            "bing"
+        ],
+        "positions": [
+            1,
+            7
+        ],
+        "score": 2.2857142857142856,
+        "category": "general"
+    },
+    {
+        "template": "default.html",
+        "url": "https://www.theguardian.com/technology/artificialintelligenceai",
+        "title": "AI (artificial intelligence) | The Guardian",
+        "content": "4 hours ago ... Latest news, sport, business, comment, analysis and reviews from the Guardian, the world's leading liberal voice.",
+        "publishedDate": null,
+        "thumbnail": "",
+        "engine": "brave",
+        "parsed_url": [
+            "https",
+            "www.theguardian.com",
+            "/technology/artificialintelligenceai",
+            "",
+            "",
+            ""
+        ],
+        "img_src": "",
+        "priority": "",
+        "engines": [
+            "brave",
+            "startpage"
+        ],
+        "positions": [
+            3,
+            3
+        ],
+        "score": 1.3333333333333333,
+        "category": "general"
+    },
+    {
+        "url": "https://www.bbc.co.uk/news/topics/ce1qrvleleqt",
+        "title": "Artificial intelligence | Latest News & Updates - BBC",
+        "content": "Latest Updates · Wave of false AI claims about Israeli PM Netanyahu. · Is this product 'human-made'? · AI 'traffic twin' helping to reduce delays · How to copexa0...",
+        "publishedDate": null,
+        "engine": "startpage",
+        "template": "default.html",
+        "parsed_url": [
+            "https",
+            "www.bbc.co.uk",
+            "/news/topics/ce1qrvleleqt",
+            "",
+            "",
+            ""
+        ],
+        "img_src": "",
+        "thumbnail": "",
+        "priority": "",
+        "engines": [
+            "startpage"
+        ],
+        "positions": [
+            1
+        ],
+        "score": 1.0,
+        "category": "general"
+    },
+    {
+        "url": "https://news.google.com/topics/CAAqJAgKIh5DQkFTRUFvSEwyMHZNRzFyZWhJRlpXNHRSMElvQUFQAQ",
+        "title": "Google News - Artificial intelligence - Latest",
+        "content": "Read full articles, watch videos, browse thousands of titles and more on the 'Artificial intelligence' topic with Google News.",
+        "engine": "bing",
+        "template": "default.html",
+        "parsed_url": [
+            "https",
+            "news.google.com",
+            "/topics/CAAqJAgKIh5DQkFTRUFvSEwyMHZNRzFyZWhJRlpXNHRSMElvQUFQAQ",
+            "",
+            "",
+            ""
+        ],
+        "img_src": "",
+        "thumbnail": "",
+        "priority": "",
+        "engines": [
+            "bing"
+        ],
+        "positions": [
+            1
+        ],
+        "score": 1.0,
+        "category": "general",
+        "publishedDate": null
+    },
+    {
+        "template": "default.html",
+        "url": "https://news.mit.edu/topic/artificial-intelligence2",
+        "title": "Artificial intelligence | MIT News | Massachusetts Institute of Technology",
+        "content": "... Professor Jesse Thaler describes a vision for a two-way bridge between artificial intelligence and the mathematical and physical sciences — one that promises to advance both. ... MIT computer science students design AI chatbots to help young users become more social, and socially confident.",
+        "publishedDate": null,
+        "thumbnail": "",
+        "engine": "brave",
+        "parsed_url": [
+            "https",
+            "news.mit.edu",
+            "/topic/artificial-intelligence2",
+            "",
+            "",
+            ""
+        ],
+        "img_src": "",
+        "priority": "",
+        "engines": [
+            "brave",
+            "startpage"
+        ],
+        "positions": [
+            7,
+            7
+        ],
+        "score": 0.5714285714285714,
+        "category": "general"
+    },
+    {
+        "template": "default.html",
+        "url": "https://www.sciencedaily.com/news/computers_math/artificial_intelligence/",
+        "title": "Artificial Intelligence News -- ScienceDaily",
+        "content": "Feb. 10, 2026 97 Researchers at the University of Michigan have created an AI system that can interpret brain MRI scans in just seconds, accurately identifying a wide range of neurological conditions and determining which cases need urgent care.",
+        "publishedDate": null,
+        "thumbnail": "",
+        "engine": "brave",
+        "parsed_url": [
+            "https",
+            "www.sciencedaily.com",
+            "/news/computers_math/artificial_intelligence/",
+            "",
+            "",
+            ""
+        ],
+        "img_src": "",
+        "priority": "",
+        "engines": [
+            "brave",
+            "bing"
+        ],
+        "positions": [
+            15,
+            6
+        ],
+        "score": 0.4666666666666667,
+        "category": "general"
+    },
+    {
+        "url": "https://www.cnn.com/business/tech/ai-news-artificial-intelligence-updates",
+        "title": "AI News: CNN’s coverage on artificial intelligence and …",
+        "content": "Latest news on AI tech in 2025 and beyond. Find CNN’s most recent coverage on artificial intelligence and information about related tech.",
+        "engine": "bing",
+        "template": "default.html",
+        "parsed_url": [
+            "https",
+            "www.cnn.com",
+            "/business/tech/ai-news-artificial-intelligence-updates",
+            "",
+            "",
+            ""
+        ],
+        "img_src": "",
+        "thumbnail": "",
+        "priority": "",
+        "engines": [
+            "bing"
+        ],
+        "positions": [
+            3
+        ],
+        "score": 0.3333333333333333,
+        "category": "general",
+        "publishedDate": null
+    },
+    {
+        "url": "https://www.wsj.com/tech/ai",
+        "title": "Artificial Intelligence - Latest AI News and Analysis - WSJ.com",
+        "content": "The latest artificial intelligence news coverage focusing on the technology, tools and the companies building AI technology.",
+        "publishedDate": null,
+        "engine": "startpage",
+        "template": "default.html",
+        "parsed_url": [
+            "https",
+            "www.wsj.com",
+            "/tech/ai",
+            "",
+            "",
+            ""
+        ],
+        "img_src": "",
+        "thumbnail": "",
+        "priority": "",
+        "engines": [
+            "startpage"
+        ],
+        "positions": [
+            4
+        ],
+        "score": 0.25,
+        "category": "general"
+    },
+    {
+        "url": "https://www.allaboutai.com/ai-news/",
+        "title": "AI News: Latest Updates & Breakthroughs | All About AI",
+        "content": "Mar 9, 2026 · Get the latest AI news, updates, and breakthroughs. Stay informed with real-time coverage on artificial intelligence trends, research, and industry …",
+        "engine": "bing",
+        "template": "default.html",
+        "parsed_url": [
+            "https",
+            "www.allaboutai.com",
+            "/ai-news/",
+            "",
+            "",
+            ""
+        ],
+        "img_src": "",
+        "thumbnail": "",
+        "priority": "",
+        "engines": [
+            "bing"
+        ],
+        "positions": [
+            5
+        ],
+        "score": 0.2,
+        "category": "general",
+        "publishedDate": null
+    },
+    {
+        "url": "https://blog.google/innovation-and-ai/technology/ai/",
+        "title": "Official Google AI news and updates",
+        "content": "AI · AI Impact Summit 2026: How we're partnering to make AI work for everyone · Gemini App · Research · Developers · All the Latest.",
+        "publishedDate": null,
+        "engine": "startpage",
+        "template": "default.html",
+        "parsed_url": [
+            "https",
+            "blog.google",
+            "/innovation-and-ai/technology/ai/",
+            "",
+            "",
+            ""
+        ],
+        "img_src": "",
+        "thumbnail": "",
+        "priority": "",
+        "engines": [
+            "startpage"
+        ],
+        "positions": [
+            6
+        ],
+        "score": 0.16666666666666666,
+        "category": "general"
+    }
+]

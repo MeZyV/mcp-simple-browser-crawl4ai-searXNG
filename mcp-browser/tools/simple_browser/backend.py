@@ -32,7 +32,9 @@ from .page_contents import (
     process_search_results
 )
 
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
 
 
 VIEW_SOURCE_PREFIX = "view-source:"
@@ -328,7 +330,26 @@ class SearxngCrawlBackend(Backend):
             raise BackendError(f"SearXNG search failed for '{query}': {e}") from e
 
         results = data.get("results", [])[:topn]
-        return process_search_results(results, query)
+
+        html_page = f"""
+        <html><body>
+        <h1>Search Results</h1>
+        <ul>
+        {"".join([f"<li><a href='{line_result["url"]}'>{line_result["title"]}</a> {line_result["content"]}</li>" for line_result in results])}
+        </ul>
+        </body></html>
+        """
+
+        ret = process_html(
+            html=html_page,
+            url="",
+            title=query,
+            display_urls=True,
+            session=session,
+        )
+        logger.info(ret)
+        return ret
+        # return process_search_results(results, query)
 
     async def _searxng_get(
         self,

@@ -2,6 +2,7 @@ version: '3.8'
 
 services:
   mcp-browser:
+    container_name: mcp-browser
     build:
       context: ./mcp-browser/
     ports:
@@ -76,6 +77,18 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  mcpo:
+    image: ghcr.io/open-webui/mcpo:latest
+    container_name: mcpo-wrap-browser
+    ports:
+      - "8004:8004"
+    command: ["--port", "8004", "--", "uvx", "mcp-proxy", "http://mcp-browser:8003/sse"]
+    restart: unless-stopped
+    depends_on:
+      - mcp-browser
+    networks:
+      - search-net
 
 networks:
   search-net:

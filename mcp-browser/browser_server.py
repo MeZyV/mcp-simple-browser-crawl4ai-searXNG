@@ -4,9 +4,11 @@ from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 from typing import Union, Optional
 
+import uvicorn
 from mcp.server.fastmcp import Context, FastMCP
 from tools.simple_browser import SimpleBrowserTool
 from tools.simple_browser.backend import SearxngCrawlBackend
+from starlette.middleware.cors import CORSMiddleware
 
 @dataclass
 class AppContext:
@@ -34,8 +36,13 @@ async def app_lifespan(_server: FastMCP) -> AsyncIterator[AppContext]:
     yield AppContext()
 
 
-PORT = os.getenv("MCP_BROWSER_PORT", 8003)
+PORT = int(os.getenv("MCP_BROWSER_PORT", 8003))
 HOST = os.getenv("MCP_BROWSER_HOST", "0.0.0.0")
+# Allowed origins - customize as needed
+ALLOWED_ORIGINS = os.getenv(
+    "CORS_ORIGINS",
+    "*"  # or "http://localhost:3000,http://host.docker.internal:3000"
+).split(",")
 
 # Pass lifespan to server
 mcp = FastMCP(
@@ -52,7 +59,6 @@ sources=web
     port=PORT,
     host=HOST
 )
-
 
 @mcp.tool(
     name="search",
@@ -126,9 +132,25 @@ async def find_pattern(ctx: Context, pattern: str, cursor: int = -1) -> str:
 
 
 if __name__ == "__main__":
+    # ── Get the underlying ASGI app from FastMCP ──────────────────────────────
     # Read from your environment variables, with fallback defaults
     # transport_type = os.getenv("MCP_TRANSPORT", "sse")
     # server_port = int(os.getenv("MCP_BROWSER_PORT", 8003))
     # server_host = os.getenv("MCP_BROWSER_HOST", "0.0.0.0")
-    
-    mcp.run()
+    try:
+        asgi_app = mcp.sse_app()          # older fastmcp versions
+    except AttributeError:
+        asgi_app = mcp.http_app()         # fallback
+
+    # ── Wrap with CORS middleware ─────────────────────────────────────────────
+    asgi_app = CORSMiddleware(
+        asgi_app,
+        allow_origins=ALLOWED_ORIGINS,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+        expose_headers=["*"],
+    )
+
+    # ── Run with uvicorn directly ─────────────────────────────────────────────
+    uvicorn.run(asgi_app, host=HOST, port=PORT)
