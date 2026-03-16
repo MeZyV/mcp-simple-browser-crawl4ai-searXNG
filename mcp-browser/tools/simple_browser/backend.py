@@ -331,24 +331,7 @@ class SearxngCrawlBackend(Backend):
 
         results = data.get("results", [])[:topn]
 
-        html_page = f"""
-        <html><body>
-        <h1>Search Results</h1>
-        <ul>
-        {"".join([f"<li><a href='{line_result["url"]}'>{line_result["title"]}</a> {line_result["content"]}</li>" for line_result in results])}
-        </ul>
-        </body></html>
-        """
-
-        ret = process_html(
-            html=html_page,
-            url="",
-            title=query,
-            display_urls=True,
-            session=session,
-        )
-        return ret
-        # return process_search_results(results, query)
+        return process_search_results(results, query)
 
     async def _searxng_get(
         self,
