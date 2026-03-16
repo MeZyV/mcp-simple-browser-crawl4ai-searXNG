@@ -1,0 +1,82 @@
+version: '3.8'
+
+services:
+  mcp-browser:
+    build:
+      context: ./mcp-browser/
+    ports:
+      - "8003:8003"
+    env_file:
+      - .env
+    depends_on:
+      - searxng
+      - crawl4ai
+    networks:
+      - search-net
+
+
+
+  # SearXNG: Privacy-respecting metasearch engine
+  searxng:
+    image: searxng/searxng:latest
+    container_name: searxng
+    # ports:
+    #   - "8080:8080"
+    env_file:
+      - .env
+    volumes:
+      - ./searxng/settings.yml:/etc/searxng/settings.yml:ro
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETGID
+      - SETUID
+      - DAC_OVERRIDE
+    networks:
+      - search-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Custom Crawl4AI Service
+  crawl4ai:
+    build:
+      context: ./crawl4ai/
+    container_name: crawl4ai
+    # ports:
+    #   - "8002:8002"
+    env_file:
+      - .env
+    environment:
+      - PROXY_URL=${PROXY_URL}
+      - CRAWL4AI_LOG_LEVEL=INFO
+    shm_size: '1gb' # Essential for Chrome performance in Docker
+    networks:
+      - search-net
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./logs:/app/logs
+
+  # Redis for Crawl4AI Caching
+  redis:
+    image: redis:alpine
+    container_name: redis-mcp-browser
+    networks:
+      - search-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  search-net:
+    driver: bridge

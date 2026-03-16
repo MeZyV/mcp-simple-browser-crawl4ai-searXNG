@@ -1,0 +1,18 @@
+[project]
+name = "mcp-simple-browser-searcrawl"
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = [
+    "mcp[cli]>=1.12.2",
+    "aiohttp",
+    "beautifulsoup4",
+    "html2text",
+    "readabilipy",
+    "tenacity",
+    "chz",
+    "lxml",
+    "pydantic",
+    "tiktoken",
+    "structlog",
+    "openai-harmony",
+]
