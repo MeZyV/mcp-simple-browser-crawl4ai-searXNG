@@ -12,6 +12,8 @@ search:
   formats:
     - html
     - json
+  blocked_domains:
+    - zhihu.com
 
 server:
   # base_url: localhost
