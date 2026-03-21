@@ -483,18 +483,6 @@ class SimpleBrowserTool(Tool):
         
         self.tool_state.add_page(search_page)
         yield await self.show_page_safely(loc=0)
-        lines = [f"Search results for: {query}\n"]
-        for i, r in enumerate(results, 1):
-            title = r.get("title", "No title")
-            url = r.get("url", "")
-            snippet = r.get("content", "")
-            lines.append(f"[{i}] {title}")
-            lines.append(f"    URL: {url}")
-            if snippet:
-                lines.append(f"    {snippet}")
-            lines.append("")
-        
-        return "\n".join(lines)
 
     @function_the_model_can_call
     @handle_errors
