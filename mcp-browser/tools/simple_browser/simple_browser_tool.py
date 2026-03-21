@@ -3,6 +3,7 @@ import dataclasses
 import functools
 import itertools
 import json
+import os
 import re
 import textwrap
 from typing import Any, AsyncIterator, Callable, ParamSpec, Sequence
@@ -23,7 +24,6 @@ from openai_harmony import (
 
 from ..tool import Tool
 
-# from functions import Function, from_python
 from .backend import (
     VIEW_SOURCE_PREFIX,
     Backend,
@@ -34,21 +34,38 @@ from .page_contents import Extract, PageContents
 
 logger = structlog.stdlib.get_logger(component=__name__)
 
+# ---------------------------------------------------------------------------
+# Link format switch
+# ---------------------------------------------------------------------------
+_MARKDOWN_LINKS = os.getenv("MARKDOWN_LINK_FORMAT", "1") == "1"
 
-# TODO(zhuohan): Use the correct encoding at release
 ENC_NAME = "o200k_base"
-FIND_PAGE_LINK_FORMAT = "# 【{idx}†{title}】"
-PARTIAL_INITIAL_LINK_PATTERN = re.compile(r"^[^【】]*】")
-PARTIAL_FINAL_LINK_PATTERN = re.compile(
-    r"【\d*(?:†(?P<content>[^†】]*)(?:†[^†】]*)?)?$"
-)
-LINK_PATTERN = re.compile(r"【\d+†(?P<content>[^†】]+)(?:†[^†】]+)?】")
 
-CITATION_OUTPUT_PATTERN = re.compile(r"【(?P<cursor>\d+)†(?P<content>[^†】]+)(?:†[^†】]+)?】")
+# ---------------------------------------------------------------------------
+# Patterns – dual format support
+# ---------------------------------------------------------------------------
+if _MARKDOWN_LINKS:
+    FIND_PAGE_LINK_FORMAT = "# [{idx}*{title}](find)"
+    PARTIAL_INITIAL_LINK_PATTERN = re.compile(r"^[^\[\]]*\]\([^)]*\)")
+    PARTIAL_FINAL_LINK_PATTERN = re.compile(
+        r"\[\d*(?:\*(?P<content>[^*\])]*))?(?:\]\([^)]*)?$"
+    )
+    LINK_PATTERN = re.compile(r"\[(\d+)\*(?P<content>[^\]*]+)\]\([^)]*\)")
+    CITATION_OUTPUT_PATTERN = re.compile(
+        r"\[(?P<cursor>\d+)\*(?P<content>[^\]]+)\]\((?P<url>[^)]*)\)"
+    )
+else:
+    FIND_PAGE_LINK_FORMAT = "# 【{idx}†{title}】"
+    PARTIAL_INITIAL_LINK_PATTERN = re.compile(r"^[^【】]*】")
+    PARTIAL_FINAL_LINK_PATTERN = re.compile(
+        r"【\d*(?:†(?P<content>[^†】]*)(?:†[^†】]*)?)?$"
+    )
+    LINK_PATTERN = re.compile(r"【\d+†(?P<content>[^†】]+)(?:†[^†】]+)?】")
+    CITATION_OUTPUT_PATTERN = re.compile(
+        r"【(?P<cursor>\d+)†(?P<content>[^†】]+)(?:†[^†】]+)?】"
+    )
 
 CallParams = ParamSpec("CallParams")
-
-
 _P = ParamSpec("_P")
 _live_function_name = contextvars.ContextVar[str]("_live_function_name")
 
@@ -81,7 +98,7 @@ def _tiktoken_vocabulary_lengths(enc_name: str) -> list[int]:
     for i in range(encoding.n_vocab):
         try:
             results.append(len(encoding.decode([i])))
-        except Exception as e:
+        except Exception:
             results.append(1)
     return results
 
@@ -89,12 +106,11 @@ def _tiktoken_vocabulary_lengths(enc_name: str) -> list[int]:
 @dataclasses.dataclass(frozen=True)
 class Tokens:
     tokens: list[int]
-    tok2idx: list[int]  # Offsets = running sum of lengths.
+    tok2idx: list[int]
 
 
 @functools.cache
 def max_chars_per_token(enc_name: str) -> int:
-    """Typical value is 128, but let's be safe."""
     tok_lens = _tiktoken_vocabulary_lengths(enc_name)
     return max(tok_lens)
 
@@ -106,8 +122,7 @@ def get_tokens(text: str, enc_name: str) -> Tokens:
     tok2idx = [0] + list(itertools.accumulate(_vocabulary_lengths[i] for i in tokens))[
         :-1
     ]
-    result = Tokens(tokens=tokens, tok2idx=tok2idx)
-    return result
+    return Tokens(tokens=tokens, tok2idx=tok2idx)
 
 
 def get_end_loc(
@@ -119,36 +134,29 @@ def get_end_loc(
     encoding_name: str,
 ) -> int:
     if num_lines <= 0:
-        # COMPUTE NUMBER OF LINES TO SHOW
         txt = join_lines(lines[loc:], add_line_numbers=True, offset=loc)
-        # if the text is very short, no need to truncate at all
-        # at least one char per token
         if len(txt) > view_tokens:
-            # limit the amount of text we tokenize here
             upper_bound = max_chars_per_token(encoding_name)
             tok2idx = get_tokens(
                 txt[: (view_tokens + 1) * upper_bound], encoding_name
             ).tok2idx
             if len(tok2idx) > view_tokens:
                 end_idx = tok2idx[view_tokens]
-                num_lines = txt[:end_idx].count("\n") + 1  # round up
+                num_lines = txt[:end_idx].count("\n") + 1
             else:
                 num_lines = total_lines
         else:
             num_lines = total_lines
-
     return min(loc + num_lines, total_lines)
 
 
 def get_page_metadata(
     curr_page: PageContents,
 ) -> dict[str, str | None | dict[str, str] | list[str]]:
-    """Some attributes of the current page."""
-    page_metadata: dict[str, str | None | dict[str, str] | list[str]] = {
+    return {
         "url": curr_page.url,
         "title": curr_page.title,
     }
-    return page_metadata
 
 
 def join_lines(
@@ -169,7 +177,7 @@ def wrap_lines(text: str, width: int = 80) -> list[str]:
             )
             if line
             else [""]
-        )  # preserve empty lines
+        )
         for line in lines
     )
     return list(wrapped)
@@ -177,7 +185,7 @@ def wrap_lines(text: str, width: int = 80) -> list[str]:
 
 def strip_links(text: str) -> str:
     text = re.sub(PARTIAL_INITIAL_LINK_PATTERN, "", text)
-    text = re.sub(PARTIAL_FINAL_LINK_PATTERN, lambda mo: mo.group("content"), text)
+    text = re.sub(PARTIAL_FINAL_LINK_PATTERN, lambda mo: mo.group("content") or "", text)
     text = re.sub(LINK_PATTERN, lambda mo: mo.group("content"), text)
     return text
 
@@ -187,21 +195,17 @@ def maybe_get_function_args(
 ) -> dict[str, Any] | None:
     if not message.recipient.startswith(f"{tool_name}."):
         return None
-
     contents = ""
     if len(message.content) == 1 and isinstance(message.content[0], TextContent):
         contents = message.content[0].text
-
     if not contents:
         return {}
-
     try:
         parsed_contents = json.loads(contents)
         if isinstance(parsed_contents, dict):
             return parsed_contents
     except json.JSONDecodeError:
         pass
-
     return None
 
 
@@ -245,14 +249,13 @@ async def run_find_in_page(
     else:
         display_text = f"No `find` results for pattern: `{pattern}`"
 
-    result_page = PageContents(
+    return PageContents(
         url=f"{page.url}/find?pattern={quote(pattern)}",
         title=f"Find results for text: `{pattern}` in `{page.title}`",
         text=display_text,
         urls={str(i): url for i, url in enumerate(urls)},
         snippets={str(i): snip for i, snip in enumerate(snippets)},
     )
-    return result_page
 
 
 def handle_errors(
@@ -263,7 +266,6 @@ def handle_errors(
         *args: CallParams.args, **kwargs: CallParams.kwargs
     ) -> AsyncIterator[Message]:
         tool = args[0]
-        # Could be cool to type this explicitly, but mypy makes it hard
         assert isinstance(tool, SimpleBrowserTool)
         try:
             async for msg in func(*args, **kwargs):
@@ -274,10 +276,34 @@ def handle_errors(
     return inner
 
 
+# ---------------------------------------------------------------------------
+# Tool description – adapts to link format
+# ---------------------------------------------------------------------------
+if _MARKDOWN_LINKS:
+    _TOOL_DESCRIPTION_TEMPLATE = (
+        "Tool for browsing.\n"
+        "The `cursor` appears in brackets before each browsing display: `[{{cursor}}]`.\n"
+        "Cite information from the tool using the following format:\n"
+        "`[{{cursor}}*L{{line_start}}(-L{{line_end}})?]({{url}})`, "
+        "for example: `[6*L9-L11](https://example.com)` or `[8*L3](https://example.com)`.\n"
+        "Do not quote more than 10 words directly from the tool output.\n"
+        "sources={source}"
+    )
+else:
+    _TOOL_DESCRIPTION_TEMPLATE = (
+        "Tool for browsing.\n"
+        "The `cursor` appears in brackets before each browsing display: `[{{cursor}}]`.\n"
+        "Cite information from the tool using the following format:\n"
+        "`【{{cursor}}†L{{line_start}}(-L{{line_end}})?】`, "
+        "for example: `【6†L9-L11】` or `【8†L3】`.\n"
+        "Do not quote more than 10 words directly from the tool output.\n"
+        "sources={source}"
+    )
+
+
+
 class SimpleBrowserState(pydantic.BaseModel):
-    # maps page url to page contents
     pages: dict[str, PageContents] = pydantic.Field(default_factory=dict)
-    # a sequential list of page urls
     page_stack: list[str] = pydantic.Field(default_factory=list)
 
     @property
@@ -332,7 +358,6 @@ class SimpleBrowserTool(Tool):
             self.tool_state = SimpleBrowserState()
         else:
             self.tool_state = SimpleBrowserState.model_validate(tool_state)
-
         self.encoding_name = encoding_name
         self.max_search_results = max_search_results
         self.view_tokens = view_tokens
@@ -352,12 +377,7 @@ class SimpleBrowserTool(Tool):
     def tool_config(self) -> ToolNamespaceConfig:
         config = ToolNamespaceConfig.browser()
         config.name = self.name
-        config.description = """Tool for browsing.
-The `cursor` appears in brackets before each browsing display: `[{cursor}]`.
-Cite information from the tool using the following format:
-`【{cursor}†L{line_start}(-L{line_end})?】`, for example: `【6†L9-L11】` or `【8†L3】`.
-Do not quote more than 10 words directly from the tool output.
-sources=""" + self.backend.source
+        config.description = _TOOL_DESCRIPTION_TEMPLATE.format(source=self.backend.source)
         return config
 
     @property
@@ -371,7 +391,6 @@ sources=""" + self.backend.source
         summary: str | None = None,
     ):
         to_return = ""
-        # Always show summaries.
         if summary:
             to_return += summary
         to_return += result
@@ -390,7 +409,6 @@ sources=""" + self.backend.source
         if domain:
             header += f" ({domain})"
         header += f"\n**{scrollbar}**\n\n"
-
         content = TextContent(text=self._render_browsing_display(cursor, body, header))
         return self.make_response(
             content=content, metadata=get_page_metadata(self.tool_state.get_page())
@@ -401,21 +419,16 @@ sources=""" + self.backend.source
         cursor = self.tool_state.current_cursor
         lines = wrap_lines(text=page.text)
         total_lines = len(lines)
-
         if loc >= total_lines:
-            err_msg = (
+            raise ToolUsageError(
                 f"Invalid location parameter: `{loc}`. "
                 f"Cannot exceed page maximum of {total_lines - 1}."
             )
-            raise ToolUsageError(err_msg)
-
         end_loc = get_end_loc(
             loc, num_lines, total_lines, lines, self.view_tokens, self.encoding_name
         )
-
         lines_to_show = lines[loc:end_loc]
         body = join_lines(lines_to_show, add_line_numbers=True, offset=loc)
-
         scrollbar = f"viewing lines [{loc} - {end_loc - 1}] of {total_lines - 1}"
         return self._make_response(page, cursor, body, scrollbar)
 
@@ -427,13 +440,10 @@ sources=""" + self.backend.source
             raise e
 
     async def _open_url(self, url: str, direct_url_open: bool) -> PageContents:
-        """Use the cache, if available."""
         backend = self.backend
-        # direct_url_open should be regarded as a refresh
         if not direct_url_open and (page := self.tool_state.get_page_by_url(url)):
             assert page.url == url
             return page
-
         try:
             async with ClientSession() as session:
                 page = await backend.fetch(url, session=session)
@@ -446,8 +456,6 @@ sources=""" + self.backend.source
             ) from e
 
     def make_error_message(self, error: Exception) -> Message:
-        """Uses the message creation codepath from the base class."""
-        error_name = error.__class__.__name__
         content = TextContent(text=str(error))
         return self.make_response(content=content)
 
@@ -472,9 +480,21 @@ sources=""" + self.backend.source
         except Exception as e:
             msg = maybe_truncate(str(e))
             raise BackendError(f"Error during search for `{query}`: {msg}") from e
-
+        
         self.tool_state.add_page(search_page)
         yield await self.show_page_safely(loc=0)
+        lines = [f"Search results for: {query}\n"]
+        for i, r in enumerate(results, 1):
+            title = r.get("title", "No title")
+            url = r.get("url", "")
+            snippet = r.get("content", "")
+            lines.append(f"[{i}] {title}")
+            lines.append(f"    URL: {url}")
+            if snippet:
+                lines.append(f"    {snippet}")
+            lines.append("")
+        
+        return "\n".join(lines)
 
     @function_the_model_can_call
     @handle_errors
@@ -494,19 +514,17 @@ sources=""" + self.backend.source
             snippet = None
             url = id
             direct_url_open = True
-        else:  # Operate on a previously opened page
+        else:
             curr_page = self.tool_state.get_page(cursor)
-
-            if id >= 0:  # click a link
+            if id >= 0:
                 try:
                     url = curr_page.urls[str(id)]
                 except KeyError as e:
                     raise ToolUsageError(f"Invalid link id `{id}`.") from e
                 snippet = (curr_page.snippets or {}).get(str(id))
                 if snippet and curr_page.url == "":
-                    # current page is a search result page
                     assert isinstance(snippet, Extract)
-            else:  # navigate to new position on the current page
+            else:
                 if not view_source:
                     stay_on_current_page = True
                 url = curr_page.url
@@ -524,7 +542,7 @@ sources=""" + self.backend.source
 
         self.tool_state.add_page(new_page)
 
-        if loc < 0:  # unset
+        if loc < 0:
             if snippet is not None and snippet.line_idx is not None:
                 loc = snippet.line_idx
                 if loc > 4:
@@ -541,7 +559,6 @@ sources=""" + self.backend.source
             raise ToolUsageError(
                 "Cannot run `find` on search results page or find results page"
             )
-
         pc = await run_find_in_page(
             pattern=str(pattern).lower(),
             page=page,
@@ -556,17 +573,11 @@ sources=""" + self.backend.source
         metadata: dict[str, Any] | None = None,
         author: Author | None = None,
     ) -> Message:
-        """
-        Make a response message.
-
-        Should be used from `@function_the_model_can_call` if author is not provided.
-        """
         if author is None:
             tool_name = self.get_tool_name()
             function_name = _live_function_name.get()
             assert function_name is not None
             author = Author(role=Role.TOOL, name=f"{tool_name}.{function_name}")
-
         return Message(
             author=author,
             content=[content],
@@ -576,7 +587,6 @@ sources=""" + self.backend.source
         function_args = maybe_get_function_args(message, tool_name=self.name)
         if function_args is None:
             raise ValueError("Invalid function arguments")
-
         if "cursor" in function_args and function_args["cursor"] >= 0:
             page = self.tool_state.get_page(cursor=function_args["cursor"])
             if "id" in function_args:
@@ -616,81 +626,64 @@ sources=""" + self.backend.source
         else:
             raise ValueError("should not be here")
 
-
-    def normalize_citations(self, old_content: str, hide_partial_citations: bool = False) -> tuple[str, list[dict[str, Any]], bool]:
-        """
-        Returns a tuple of (new_message, annotations, has_partial_citations)
-        - new_message: Message with citations replaced by ([domain](url))
-        - annotations: list of dicts with start_index, end_index, and title (url)
-        - has_partial_citations: whether the text includes an unfinished citation
-        """
-
+    def normalize_citations(
+        self, old_content: str, hide_partial_citations: bool = False
+    ) -> tuple[str, list[dict[str, Any]], bool]:
         has_partial_citations = PARTIAL_FINAL_LINK_PATTERN.search(old_content) is not None
         if hide_partial_citations and has_partial_citations:
             old_content = PARTIAL_FINAL_LINK_PATTERN.sub("", old_content)
 
-        matches = []
-        for match in CITATION_OUTPUT_PATTERN.finditer(old_content):
-            cursor = match.group("cursor")
-            content = match.group("content")
-            start_idx = match.start()
-            end_idx = match.end()
-            matches.append({
-                "cursor": cursor,
-                "content": content,
-                "start": start_idx,
-                "end": end_idx
-            })
-
-        # Build a mapping from cursor to url
-        cursor_to_url = {}
+        # Build cursor → url mapping from page stack
+        cursor_to_url: dict[str, str] = {}
         for idx, url in enumerate(self.tool_state.page_stack):
             cursor_to_url[str(idx)] = url
 
-        def extract_domain(url):
+        def extract_domain(url: str) -> str:
             try:
                 return unquote(url).split("/")[2]
             except Exception:
                 return url
 
+        matches = []
+        for match in CITATION_OUTPUT_PATTERN.finditer(old_content):
+            cursor = match.group("cursor")
+            content = match.group("content")
+            if _MARKDOWN_LINKS:
+                url = match.group("url")
+            else:
+                url = cursor_to_url.get(cursor)
+            matches.append({
+                "cursor": cursor,
+                "content": content,
+                "url": url,
+                "start": match.start(),
+                "end": match.end(),
+            })
+
         new_content = ""
+        annotations: list[dict[str, Any]] = []
         last_idx = 0
-        annotations = []
-        running_offset = 0  # Offset due to length changes in replacements
 
         for m in matches:
-            cursor = m["cursor"]
-            url = cursor_to_url.get(cursor, None)
-            orig_start = m["start"]
-            orig_end = m["end"]
-
-            # Add text before the citation
-            new_content += old_content[last_idx:orig_start]
+            url = m["url"]
+            new_content += old_content[last_idx:m["start"]]
 
             if url:
                 domain = extract_domain(url)
                 replacement = f" ([{domain}]({url})) "
-                # The start and end indices in the new content
                 start_index = len(new_content)
-                end_index = start_index + len(replacement)
                 annotations.append({
                     "start_index": start_index,
-                    "end_index": end_index,
+                    "end_index": start_index + len(replacement),
                     "title": domain,
                     "url": url,
                     "type": "url_citation",
                 })
                 new_content += replacement
             else:
-                # Keep the original citation format if cursor is missing
-                replacement = old_content[orig_start:orig_end]
-                start_index = len(new_content)
-                end_index = start_index + len(replacement)
-                # No annotation for missing url, but could add if desired
-                new_content += replacement
+                new_content += old_content[m["start"]:m["end"]]
 
-            last_idx = orig_end
+            last_idx = m["end"]
 
         new_content += old_content[last_idx:]
         return new_content, annotations, has_partial_citations
-

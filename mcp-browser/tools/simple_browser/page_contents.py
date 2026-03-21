@@ -7,8 +7,9 @@ from __future__ import annotations
 import dataclasses
 import functools
 import logging
+import os
 import re
-from urllib.parse import urljoin, urlparse
+from urllib.parse import parse_qs, urlencode, urljoin, urlparse, urlunparse
 
 import aiohttp
 import html2text
@@ -21,16 +22,41 @@ import tiktoken
 
 logger = logging.getLogger(__name__)
 
+# ---------------------------------------------------------------------------
+# Link format switch: set MARKDOWN_LINK_FORMAT=1 to use []() style links
+# instead of the legacy 【†】 format designed for gpt-oss.
+# ---------------------------------------------------------------------------
+_MARKDOWN_LINKS = os.getenv("MARKDOWN_LINK_FORMAT", "1") == "1"
 
+# ---------------------------------------------------------------------------
+# Regex patterns
+# ---------------------------------------------------------------------------
 HTML_SUP_RE = re.compile(r"<sup( [^>]*)?>([\w\-]+)</sup>")
 HTML_SUB_RE = re.compile(r"<sub( [^>]*)?>([\w\-]+)</sub>")
 HTML_TAGS_SEQ_RE = re.compile(r"(?<=\w)((<[^>]*>)+)(?=\w)")
 WHITESPACE_ANCHOR_RE = re.compile(r"(【\@[^】]+】)(\s+)")
 EMPTY_LINE_RE = re.compile(r"^\s+$", flags=re.MULTILINE)
 EXTRA_NEWLINE_RE = re.compile(r"\n(\s*\n)+")
+_MD_LINK_RE = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
+_LEGACY_ANCHOR_RE = re.compile(r"【([^】]+)】")
+
+# Tracking query-parameters to strip when cleaning URLs.
+_TRACKING_PARAMS = frozenset({
+    "utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content",
+    "fbclid", "gclid", "gclsrc", "dclid", "msclkid",
+    "mc_cid", "mc_eid", "oly_anon_id", "oly_enc_id",
+    "_openstat", "vero_id", "wickedid", "yclid", "za_rid",
+    "ref", "ref_src", "ref_url", "source", "s", "ss",
+    "igshid", "si", "feature", "app",
+})
 
 
-class Extract(pydantic.BaseModel):  # A search result snippet or a quotable extract
+# ---------------------------------------------------------------------------
+# Pydantic models
+# ---------------------------------------------------------------------------
+
+class Extract(pydantic.BaseModel):
+    """A search result snippet or a quotable extract."""
     url: str
     text: str
     title: str
@@ -63,14 +89,68 @@ class Tokens:
     tok2idx: list[int]  # Offsets = running sum of lengths.
 
 
+# ---------------------------------------------------------------------------
+# URL helpers
+# ---------------------------------------------------------------------------
+
 def get_domain(url: str) -> str:
     """Extracts the domain from a URL."""
     if "http" not in url:
-        # If `get_domain` is called on a domain, add a scheme so that the
-        # original domain is returned instead of the empty string.
         url = "http://" + url
     return urlparse(url).netloc
 
+
+def _clean_url(url: str) -> str:
+    """Strip common tracking query-parameters from *url*, keeping it intact otherwise."""
+    try:
+        parsed = urlparse(url)
+        params = parse_qs(parsed.query, keep_blank_values=False)
+        filtered = {k: v for k, v in params.items() if k.lower() not in _TRACKING_PARAMS}
+        return urlunparse(parsed._replace(query=urlencode(filtered, doseq=True)))
+    except Exception:
+        return url
+
+
+def arxiv_to_ar5iv(url: str) -> str:
+    """Converts an arxiv.org URL to its ar5iv.org equivalent."""
+    return re.sub(r"arxiv.org", r"ar5iv.org", url)
+
+
+# ---------------------------------------------------------------------------
+# Link formatting
+# ---------------------------------------------------------------------------
+
+def _format_link(
+    text: str,
+    url: str,
+    domain: str,
+    cur_domain: str,
+    link_id: str | None = None,
+) -> str:
+    """Render a single link in the active format.
+
+    * *link_id* ``None``  → inline / in-text link (navigation, etc.)
+    * *link_id* provided  → numbered reference (search results, footnotes)
+    """
+    if _MARKDOWN_LINKS:
+        if link_id is not None:
+            return f"[{link_id}*{text}]({url})"
+        return f"[{text}]({url})"
+    else:
+        if link_id is not None:
+            if domain and domain != cur_domain:
+                return f"【{link_id}†{text}†{domain}】"
+            return f"【{link_id}†{text}】"
+        else:
+            # Inline link – just show the text (optionally with domain hint).
+            if domain and domain != cur_domain:
+                return f"【{text}†{domain}】"
+            return text
+
+
+# ---------------------------------------------------------------------------
+# Text helpers
+# ---------------------------------------------------------------------------
 
 def multiple_replace(text: str, replacements: dict[str, str]) -> str:
     """Performs multiple string replacements using regex pass."""
@@ -78,15 +158,36 @@ def multiple_replace(text: str, replacements: dict[str, str]) -> str:
     return regex.sub(lambda mo: replacements[mo.group(1)], text)
 
 
-@functools.lru_cache(maxsize=1024)
-def mark_lines(text: str) -> str:
-    """Adds line numbers (ex: 'L0:') to the beginning of each line in a string."""
-    # Split the string by newline characters
-    lines = text.split("\n")
+def _replace_special_chars(text: str) -> str:
+    """Replaces specific special characters with visually similar alternatives."""
+    replacements = {
+        "【": "〖",
+        "】": "〗",
+        "◼": "◾",
+        "\u200b": "",  # zero width space
+    }
+    return multiple_replace(text, replacements)
 
-    # Add lines numbers to each line and join into a single string
-    numbered_text = "\n".join([f"L{i}: {line}" for i, line in enumerate(lines)])
-    return numbered_text
+
+def merge_whitespace(text: str) -> str:
+    """Replace newlines with spaces and merge consecutive whitespace into a single space."""
+    text = text.replace("\n", " ")
+    return re.sub(r"\s+", " ", text)
+
+
+def remove_unicode_smp(text: str) -> str:
+    """Removes Unicode characters in the Supplemental Multilingual Plane (SMP).
+
+    SMP characters are not supported by lxml.html processing.
+    """
+    return re.compile(r"[\U00010000-\U0001FFFF]", re.UNICODE).sub("", text)
+
+
+# @functools.lru_cache(maxsize=1024)
+# def mark_lines(text: str) -> str:
+#     """Adds line numbers (ex: 'L0:') to the beginning of each line in a string."""
+#     lines = text.split("\n")
+#     return "\n".join(f"L{i}: {line}" for i, line in enumerate(lines))
 
 
 @functools.cache
@@ -102,67 +203,9 @@ def warmup_caches(enc_names: list[str]) -> None:
         pass
 
 
-def _replace_special_chars(text: str) -> str:
-    """Replaces specific special characters with visually similar alternatives."""
-    replacements = {
-        "【": "〖",
-        "】": "〗",
-        "◼": "◾",
-        # "━": "─",
-        "\u200b": "",  # zero width space
-        # Note: not replacing †
-    }
-    return multiple_replace(text, replacements)
-
-
-def merge_whitespace(text: str) -> str:
-    """Replace newlines with spaces and merge consecutive whitespace into a single space."""
-    text = text.replace("\n", " ")
-    text = re.sub(r"\s+", " ", text)
-    return text
-
-
-def arxiv_to_ar5iv(url: str) -> str:
-    """Converts an arxiv.org URL to its ar5iv.org equivalent."""
-    return re.sub(r"arxiv.org", r"ar5iv.org", url)
-
-
-def _clean_links(root: lxml.html.HtmlElement, cur_url: str) -> dict[str, str]:
-    """Processes all anchor tags in the HTML, replaces them with a custom format and returns an ID-to-URL mapping."""
-    cur_domain = get_domain(cur_url)
-    urls: dict[str, str] = {}
-    urls_rev: dict[str, str] = {}
-    for a in root.findall(".//a[@href]"):
-        assert a.getparent() is not None
-        link = a.attrib["href"]
-        if link.startswith(("mailto:", "javascript:")):
-            continue
-        text = _get_text(a).replace("†", "‡")
-        if not re.sub(r"【\@([^】]+)】", "", text):  # Probably an image
-            continue
-        if link.startswith("#"):
-            replace_node_with_text(a, text)
-            continue
-        try:
-            link = urljoin(cur_url, link)  # works with both absolute and relative links
-            domain = get_domain(link)
-        except Exception:
-            domain = ""
-        if not domain:
-            logger.debug("SKIPPING LINK WITH URL %s", link)
-            continue
-        link = arxiv_to_ar5iv(link)
-        if (link_id := urls_rev.get(link)) is None:
-            link_id = f"{len(urls)}"
-            urls[link_id] = link
-            urls_rev[link] = link_id
-        if domain == cur_domain:
-            replacement = f"【{link_id}†{text}】"
-        else:
-            replacement = f"【{link_id}†{text}†{domain}】"
-        replace_node_with_text(a, replacement)
-    return urls
-
+# ---------------------------------------------------------------------------
+# HTML helpers
+# ---------------------------------------------------------------------------
 
 def _get_text(node: lxml.html.HtmlElement) -> str:
     """Extracts all text from an HTML element and merges it into a whitespace-normalized string."""
@@ -172,53 +215,6 @@ def _get_text(node: lxml.html.HtmlElement) -> str:
 def _remove_node(node: lxml.html.HtmlElement) -> None:
     """Removes a node from its parent in the lxml tree."""
     node.getparent().remove(node)
-
-
-def _escape_md(text: str) -> str:
-    return text
-
-
-def _escape_md_section(text: str, snob: bool = False) -> str:
-    return text
-
-
-def html_to_text(html: str) -> str:
-    """Converts an HTML string to clean plaintext."""
-    html = re.sub(HTML_SUP_RE, r"^{\2}", html)
-    html = re.sub(HTML_SUB_RE, r"_{\2}", html)
-    # add spaces between tags such as table cells
-    html = re.sub(HTML_TAGS_SEQ_RE, r" \1", html)
-    # we don't need to escape markdown, so monkey-patch the logic
-    orig_escape_md = html2text.utils.escape_md
-    orig_escape_md_section = html2text.utils.escape_md_section
-    html2text.utils.escape_md = _escape_md
-    html2text.utils.escape_md_section = _escape_md_section
-    h = html2text.HTML2Text()
-    h.ignore_links = True
-    h.ignore_images = True
-    h.body_width = 0  # no wrapping
-    h.ignore_tables = True
-    h.unicode_snob = True
-    h.ignore_emphasis = True
-    result = h.handle(html).strip()
-    html2text.utils.escape_md = orig_escape_md
-    html2text.utils.escape_md_section = orig_escape_md_section
-    return result
-
-
-def _remove_math(root: lxml.html.HtmlElement) -> None:
-    """Removes all <math> elements from the lxml tree."""
-    for node in root.findall(".//math"):
-        _remove_node(node)
-
-
-def remove_unicode_smp(text: str) -> str:
-    """Removes Unicode characters in the Supplemental Multilingual Plane (SMP) from `text`.
-
-    SMP characters are not supported by lxml.html processing.
-    """
-    smp_pattern = re.compile(r"[\U00010000-\U0001FFFF]", re.UNICODE)
-    return smp_pattern.sub("", text)
 
 
 def replace_node_with_text(node: lxml.html.HtmlElement, text: str) -> None:
@@ -233,22 +229,114 @@ def replace_node_with_text(node: lxml.html.HtmlElement, text: str) -> None:
     parent.remove(node)
 
 
+def _escape_md(text: str) -> str:
+    return text
+
+
+def _escape_md_section(text: str, snob: bool = False) -> str:
+    return text
+
+
+def html_to_text(html: str) -> str:
+    """Converts an HTML string to clean plaintext."""
+    html = re.sub(HTML_SUP_RE, r"^{\2}", html)
+    html = re.sub(HTML_SUB_RE, r"_{\2}", html)
+    html = re.sub(HTML_TAGS_SEQ_RE, r" \1", html)
+
+    orig_escape_md = html2text.utils.escape_md
+    orig_escape_md_section = html2text.utils.escape_md_section
+    html2text.utils.escape_md = _escape_md
+    html2text.utils.escape_md_section = _escape_md_section
+
+    h = html2text.HTML2Text()
+    h.ignore_links = True
+    h.ignore_images = True
+    h.body_width = 0
+    h.ignore_tables = True
+    h.unicode_snob = True
+    h.ignore_emphasis = True
+    result = h.handle(html).strip()
+
+    html2text.utils.escape_md = orig_escape_md
+    html2text.utils.escape_md_section = orig_escape_md_section
+    return result
+
+
+def _remove_math(root: lxml.html.HtmlElement) -> None:
+    """Removes all <math> elements from the lxml tree."""
+    for node in root.findall(".//math"):
+        _remove_node(node)
+
+
 def replace_images(
     root: lxml.html.HtmlElement,
     base_url: str,
     session: aiohttp.ClientSession | None,
 ) -> None:
-    """Finds all image tags and replaces them with numbered placeholders (includes alt/title if available)."""
+    """Finds all image tags and replaces them with numbered placeholders."""
     cnt = 0
     for img_tag in root.findall(".//img"):
         image_name = img_tag.get("alt", img_tag.get("title"))
-        if image_name:
-            replacement = f"[Image {cnt}: {image_name}]"
-        else:
-            replacement = f"[Image {cnt}]"
+        replacement = f"[Image {cnt}: {image_name}]" if image_name else f"[Image {cnt}]"
         replace_node_with_text(img_tag, replacement)
         cnt += 1
 
+
+# ---------------------------------------------------------------------------
+# Link extraction from HTML tree
+# ---------------------------------------------------------------------------
+
+def _clean_links(root: lxml.html.HtmlElement, cur_url: str) -> dict[str, str]:
+    """Processes all anchor tags in the HTML, replaces them with formatted
+    links and returns an ID-to-URL mapping."""
+    cur_domain = get_domain(cur_url)
+    urls: dict[str, str] = {}
+    urls_rev: dict[str, str] = {}
+
+    for a in root.findall(".//a[@href]"):
+        assert a.getparent() is not None
+        link = a.attrib["href"]
+        if link.startswith(("mailto:", "javascript:")):
+            continue
+        text = _get_text(a).replace("†", "‡")
+        if not re.sub(r"【\@([^】]+)】", "", text):  # Probably an image
+            continue
+        if link.startswith("#"):
+            replace_node_with_text(a, text)
+            continue
+        try:
+            link = urljoin(cur_url, link)
+            domain = get_domain(link)
+        except Exception:
+            domain = ""
+        if not domain:
+            logger.debug("SKIPPING LINK WITH URL %s", link)
+            continue
+
+        link = arxiv_to_ar5iv(link)
+        link = _clean_url(link)
+
+        if (link_id := urls_rev.get(link)) is None:
+            link_id = f"{len(urls)}"
+            urls[link_id] = link
+            urls_rev[link] = link_id
+
+        # In-page links are inline (no link_id in display).
+        replacement = _format_link(
+            text=text,
+            url=link,
+            domain=domain,
+            cur_domain=cur_domain,
+            link_id=None,
+        )
+        replace_node_with_text(a, replacement)
+
+    return urls
+
+
+# ---------------------------------------------------------------------------
+# Main processing functions
+# ---------------------------------------------------------------------------
 
 def process_html(
     html: str,
@@ -274,27 +362,18 @@ def process_html(
         final_title = ""
 
     urls = _clean_links(root, url)
-    replace_images(
-        root=root,
-        base_url=url,
-        session=session,
-    )
+    replace_images(root=root, base_url=url, session=session)
     _remove_math(root)
+
     clean_html = lxml.etree.tostring(root, encoding="UTF-8").decode()
     text = html_to_text(clean_html)
     text = re.sub(WHITESPACE_ANCHOR_RE, lambda m: m.group(2) + m.group(1), text)
-    # ^^^ move anchors to the right thru whitespace
-    # This way anchors don't create extra whitespace
     text = re.sub(EMPTY_LINE_RE, "", text)
-    # ^^^ Get rid of empty lines
     text = re.sub(EXTRA_NEWLINE_RE, "\n\n", text)
-    # ^^^ Get rid of extra newlines
 
     top_parts = []
     if display_urls:
         top_parts.append(f"\nURL: {url}\n")
-    # NOTE: Publication date is currently not extracted due
-    # to performance costs.
 
     return PageContents(
         url=url,
@@ -304,22 +383,15 @@ def process_html(
     )
 
 
-_MD_LINK_RE = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
-
-
 def process_markdown(
     markdown: str,
     url: str,
     title: str,
 ) -> PageContents:
-    """
-    Processes raw markdown into a PageContents object.
+    """Processes raw markdown into a PageContents object.
 
-    Analogous to process_html but skips the HTML->text conversion step,
+    Analogous to process_html but skips the HTML→text conversion step,
     since the input is already markdown (e.g. from Crawl4AI).
-
-    Line numbering is NOT applied here — SimpleBrowserTool.show_page()
-    handles L{i}: prefixes via join_lines(add_line_numbers=True).
     """
     markdown = _replace_special_chars(markdown)
     markdown = re.sub(EMPTY_LINE_RE, "", markdown)
@@ -333,18 +405,24 @@ def process_markdown(
         href = match.group(2)
         if href.startswith(("mailto:", "javascript:", "#")):
             return text
-        # Resolve relative URLs
         if not href.startswith(("http://", "https://")):
             href = urljoin(url, href)
+        href = _clean_url(href)
+
         link_id = str(len(urls))
         urls[link_id] = href
         domain = get_domain(href)
-        if domain and domain != cur_domain:
-            return f"【{link_id}†{text}†{domain}】"
-        return f"【{link_id}†{text}】"
+
+        # Inline text links – no numbered reference.
+        return _format_link(
+            text=text,
+            url=href,
+            domain=domain,
+            cur_domain=cur_domain,
+            link_id=None,
+        )
 
     text = _MD_LINK_RE.sub(_replace_md_link, markdown)
-
     header = f"\nURL: {url}\n\n" if url else ""
 
     return PageContents(
@@ -356,41 +434,34 @@ def process_markdown(
 
 def process_search_results(
     results: list[dict],
-    query: str,
-) -> PageContents:
-    """
-    Transforms structured search results into a PageContents.
-    
+) -> str:
+    """Transforms structured search results into a PageContents.
+
     Each result dict should have: title, url, content/snippet.
     Works for any backend (YouCom, SearXNG, etc.)
     """
     urls: dict[str, str] = {}
     snippets: dict[str, Extract] = {}
     text_parts: list[str] = []
+    titles_and_urls = []
 
     for i, result in enumerate(results):
-        title = _replace_special_chars(result.get("title", "No title"))
-        url = result.get("url", "")
+        result_title = _replace_special_chars(result.get("title", "No title"))
+        result_url = _clean_url(result.get("url", ""))
         snippet = _replace_special_chars(result.get("content", ""))
         link_id = str(i)
 
-        urls[link_id] = url
-        domain = get_domain(url)
-        text_parts.append(f"【{link_id}†{title}†{domain}】")
-
-        if snippet:
-            text_parts.append(snippet)
-            snippets[link_id] = Extract(
-                url=url,
-                text=snippet,
-                title=title,
-            )
-        text_parts.append("")
-
-    return PageContents(
-        url="",
-        title=query,
-        text="\n".join(text_parts),
-        urls=urls,
-        snippets=snippets,
-    )
+        urls[link_id] = result_url
+        domain = get_domain(result_url)
+        # make a simple HTML page to work with browser format
+        
+        titles_and_urls.append((result_title, result_url, snippet))
+    html_page = f"""
+        <html><body>
+        <h1>Search Results</h1>
+        <ul>
+        {"".join([f"<li><a href='{url}'>{title}</a> {summary}</li>" for title, url, summary in titles_and_urls])}
+        </ul>
+        </body></html>
+        """
+    return html_page

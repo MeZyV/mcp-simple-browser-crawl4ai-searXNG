@@ -330,8 +330,16 @@ class SearxngCrawlBackend(Backend):
             raise BackendError(f"SearXNG search failed for '{query}': {e}") from e
 
         results = data.get("results", [])[:topn]
+        
+        html_page = process_search_results(results)
 
-        return process_search_results(results, query)
+        return process_html(
+            html=html_page,
+            url="",
+            title=query,
+            display_urls=True,
+            session=session,
+        )
 
     async def _searxng_get(
         self,

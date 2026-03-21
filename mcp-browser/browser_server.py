@@ -6,6 +6,8 @@ from typing import Union, Optional
 
 import uvicorn
 from mcp.server.fastmcp import Context, FastMCP
+from mcp.shared.exceptions import McpError
+from mcp.types import ErrorData, INTERNAL_ERROR
 from tools.simple_browser import SimpleBrowserTool
 from tools.simple_browser.backend import SearxngCrawlBackend
 from starlette.middleware.cors import CORSMiddleware
@@ -35,6 +37,7 @@ class AppContext:
 async def app_lifespan(_server: FastMCP) -> AsyncIterator[AppContext]:
     yield AppContext()
 
+_MARKDOWN_LINKS = os.getenv("MARKDOWN_LINK_FORMAT", "1") == "1"
 
 PORT = int(os.getenv("MCP_BROWSER_PORT", 8003))
 HOST = os.getenv("MCP_BROWSER_HOST", "0.0.0.0")
@@ -50,9 +53,11 @@ mcp = FastMCP(
     instructions=r"""
 Tool for browsing.
 The `cursor` appears in brackets before each browsing display: `[{cursor}]`.
-Cite information from the tool using the following format:
-`【{cursor}†L{line_start}(-L{line_end})?】`, for example: `【6†L9-L11】` or `【8†L3】`. 
-Do not quote more than 10 words directly from the tool output.
+Cite information from the tool using the following format:\n""" +
+r"`\[{cursor}\*L{line_start}(-L{line_end})?\]({url})`, for example: `\[6\*L9-L11\](google.com)` or `\[8\*L3\](brave.com)`"\
+if _MARKDOWN_LINKS else \
+r"`【{cursor}†L{line_start}(-L{line_end})?】`, for example: `【6†L9-L11】` or `【8†L3】`. " +\
+"""\nDo not quote more than 10 words directly from the tool output.
 sources=web
 """.strip(),
     lifespan=app_lifespan,
@@ -74,9 +79,12 @@ async def search(ctx: Context,
     browser = ctx.request_context.lifespan_context.create_or_get_browser(
         ctx.client_id)
     messages = []
-    async for message in browser.search(query=query, topn=topn, source=source):
-        if message.content and hasattr(message.content[0], 'text'):
-            messages.append(message.content[0].text)
+    try:
+        async for message in browser.search(query=query, topn=topn, source=source):
+            if message.content and hasattr(message.content[0], 'text'):
+                messages.append(message.content[0].text)
+    except Exception as e:
+        raise McpError(ErrorData(code=INTERNAL_ERROR, message=str(e)))
     return "\n".join(messages)
 
 
@@ -85,8 +93,9 @@ async def search(ctx: Context,
     title="Open a link or page",
     description="""
 Opens the link `id` from the page indicated by `cursor` starting at line number `loc`, showing `num_lines` lines.
-Valid link ids are displayed with the formatting: `【{id}†.*】`.
-If `cursor` is not provided, the most recent page is implied.
+Valid link ids are displayed with the formatting: """+
+r"\[{id}\*.*\]({url})" if _MARKDOWN_LINKS else r"`【{id}†.*】`." +\
+"""If `cursor` is not provided, the most recent page is implied.
 If `id` is a string, it is treated as a fully qualified URL associated with `source`.
 If `loc` is not provided, the viewport will be positioned at the beginning of the document or centered on the most relevant passage, if available.
 Use this function without `id` to scroll to a new location of an opened page.
@@ -100,17 +109,17 @@ async def open_link(ctx: Context,
                     view_source: bool = False,
                     source: Optional[str] = None) -> str:
     """Open a link or navigate to a page location"""
-    browser = ctx.request_context.lifespan_context.create_or_get_browser(
-        ctx.client_id)
+    browser = ctx.request_context.lifespan_context.create_or_get_browser(ctx.client_id)
     messages = []
-    async for message in browser.open(id=id,
-                                      cursor=cursor,
-                                      loc=loc,
-                                      num_lines=num_lines,
-                                      view_source=view_source,
-                                      source=source):
-        if message.content and hasattr(message.content[0], 'text'):
-            messages.append(message.content[0].text)
+    try:
+        async for message in browser.open(id=id, cursor=cursor, loc=loc,
+                                          num_lines=num_lines, view_source=view_source,
+                                          source=source):
+            if message.content and hasattr(message.content[0], 'text'):
+                messages.append(message.content[0].text)
+    except Exception as e:
+        raise McpError(ErrorData(code=INTERNAL_ERROR, message=str(e)))
+    
     return "\n".join(messages)
 
 
@@ -125,9 +134,12 @@ async def find_pattern(ctx: Context, pattern: str, cursor: int = -1) -> str:
     browser = ctx.request_context.lifespan_context.create_or_get_browser(
         ctx.client_id)
     messages = []
-    async for message in browser.find(pattern=pattern, cursor=cursor):
-        if message.content and hasattr(message.content[0], 'text'):
-            messages.append(message.content[0].text)
+    try:
+        async for message in browser.find(pattern=pattern, cursor=cursor):
+            if message.content and hasattr(message.content[0], 'text'):
+                messages.append(message.content[0].text)
+    except Exception as e:
+        raise McpError(ErrorData(code=INTERNAL_ERROR, message=str(e)))
     return "\n".join(messages)
 
 
