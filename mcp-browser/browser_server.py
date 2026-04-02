@@ -150,9 +150,9 @@ if __name__ == "__main__":
     # server_port = int(os.getenv("MCP_BROWSER_PORT", 8003))
     # server_host = os.getenv("MCP_BROWSER_HOST", "0.0.0.0")
     try:
-        asgi_app = mcp.sse_app()          # older fastmcp versions
+        asgi_app = mcp.streamable_http_app()        # streamable_http
     except AttributeError:
-        asgi_app = mcp.http_app()         # fallback
+        asgi_app = mcp.sse_app()         # older fastmcp versions
 
     # ── Wrap with CORS middleware ─────────────────────────────────────────────
     asgi_app = CORSMiddleware(
