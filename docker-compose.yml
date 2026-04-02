@@ -19,8 +19,8 @@ services:
   searxng:
     image: searxng/searxng:latest
     container_name: searxng
-    # ports:
-    #   - "8080:8080"
+    ports:
+      - "8001:8080"
     env_file:
       - .env
     volumes:
@@ -81,7 +81,7 @@ services:
     container_name: mcpo-wrap-browser
     ports:
       - "8004:8004"
-    command: ["--port", "8004", "--", "uvx", "mcp-proxy", "http://mcp-browser:8003/sse"]
+    command: ["--port", "8004", "--", "uvx", "mcp-proxy", "--transport=streamablehttp", "http://mcp-browser:8003/mcp"]
     restart: unless-stopped
     depends_on:
       - mcp-browser
